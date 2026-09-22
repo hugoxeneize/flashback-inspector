@@ -48,6 +48,10 @@ public class InspectorScreen extends Screen {
 	@Nullable
 	private final AbstractClientPlayerEntity target;
 	private final boolean isOwner;
+	/** Whether this screen was asked for, as opposed to appearing on its own. */
+	private final boolean requested;
+	/** Set once the pause has been applied, so re-measuring the layout does not apply it again. */
+	private boolean pauseApplied;
 
 	private int left;
 	private int top;
@@ -73,9 +77,26 @@ public class InspectorScreen extends Screen {
 	@Nullable
 	private ItemStack hovered;
 
+	/** Opened on purpose, by the inventory key. May pause the replay, if that is set. */
 	public InspectorScreen(@Nullable AbstractClientPlayerEntity target) {
+		this(target, true);
+	}
+
+	/**
+	 * Opened by the follow mode, on the tick a container opened during the recording.
+	 *
+	 * <p>Never pauses, whatever the setting says. Pausing here would stop the replay on every
+	 * container in the recording, and worse, it would stop it before the container could ever be
+	 * seen to close — the tick that closes it would never arrive.
+	 */
+	public static InspectorScreen followed(@Nullable AbstractClientPlayerEntity target) {
+		return new InspectorScreen(target, false);
+	}
+
+	private InspectorScreen(@Nullable AbstractClientPlayerEntity target, boolean requested) {
 		super(Text.translatable("flashbackinspector.screen.title"));
 		this.target = target;
+		this.requested = requested;
 		this.isOwner = target != null && InspectorState.get().isOwner(target.getUuid());
 	}
 
@@ -151,7 +172,11 @@ public class InspectorScreen extends Screen {
 				.dimensions(left + PAD, buttonTop, panelWidth - PAD * 2, 18)
 				.build());
 
-		if (InspectorConfig.get().pauseWhenOpened) {
+		// Once, and only for a screen that was asked for. init runs again on every resize and every
+		// time the container behind the screen changes size, and pausing there would grind the
+		// replay to a halt on each one.
+		if (requested && !pauseApplied && InspectorConfig.get().pauseWhenOpened) {
+			pauseApplied = true;
 			InspectorState.pause();
 		}
 	}

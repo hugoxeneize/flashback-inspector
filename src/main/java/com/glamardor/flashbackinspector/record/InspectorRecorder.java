@@ -246,7 +246,10 @@ public final class InspectorRecorder {
 	 */
 	private static int containerSize(ScreenHandler handler) {
 		int total = handler.slots.size();
-		return total > 36 ? total - 36 : total;
+		// Fewer than the player's own thirty-six means this is not laid out like a container at
+		// all. Recording nothing beats recording the player's inventory a second time under the
+		// name of whatever was open.
+		return total > 36 ? total - 36 : 0;
 	}
 
 	private static Text titleOf(MinecraftClient client) {

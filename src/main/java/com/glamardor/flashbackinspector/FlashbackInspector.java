@@ -117,7 +117,7 @@ public class FlashbackInspector implements ClientModInitializer {
 			if (client.currentScreen == null) {
 				AbstractClientPlayerEntity target = InspectorScreen.defaultTarget();
 				if (target != null) {
-					client.setScreen(new InspectorScreen(target));
+					client.setScreen(InspectorScreen.followed(target));
 					followOpened = true;
 				}
 			}
