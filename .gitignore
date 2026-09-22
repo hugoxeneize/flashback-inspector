@@ -1,0 +1,11 @@
+.gradle/
+build/
+run/
+run2/
+*.log
+
+# Flashback's own jar and its icon. Compiled against and drawn over, never redistributed:
+# "Copyright 2024 Moulberry. Do not reupload or redistribute."
+libs/*.jar
+icon/flashback-icon.png
+icon/preview*.png

@@ -1,0 +1,13 @@
+{
+	"required": true,
+	"minVersion": "0.8",
+	"package": "com.glamardor.flashbackinspector.mixin",
+	"compatibilityLevel": "JAVA_21",
+	"client": [
+		"MinecraftClientMixin",
+		"RecorderMixin"
+	],
+	"injectors": {
+		"defaultRequire": 1
+	}
+}
