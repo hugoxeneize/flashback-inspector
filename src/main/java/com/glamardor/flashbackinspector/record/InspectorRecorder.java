@@ -7,6 +7,7 @@ import com.glamardor.flashbackinspector.net.InspectorPayloads;
 import com.moulberry.flashback.Flashback;
 import com.moulberry.flashback.record.Recorder;
 import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.gui.screen.ingame.CreativeInventoryScreen;
 import net.minecraft.client.gui.screen.ingame.HandledScreen;
 import net.minecraft.client.network.ClientPlayerEntity;
 import net.minecraft.entity.EquipmentSlot;
@@ -122,9 +123,8 @@ public final class InspectorRecorder {
 
 	private void scanContainer(Recorder recorder, MinecraftClient client, ClientPlayerEntity player) {
 		ScreenHandler handler = player.currentScreenHandler;
-		boolean isContainer = handler != null && handler != player.playerScreenHandler;
 
-		if (!isContainer) {
+		if (!isContainer(client, player, handler)) {
 			if (lastContainerId != -1) {
 				write(recorder, new InspectorPayloads.ContainerEvent(false,
 						new InspectorPayloads.ContainerView(lastContainerId, lastContainerTitle,
@@ -206,7 +206,7 @@ public final class InspectorRecorder {
 
 		Optional<InspectorPayloads.ContainerView> container = Optional.empty();
 		ScreenHandler handler = player.currentScreenHandler;
-		if (InspectorConfig.get().recordContainers && handler != null && handler != player.playerScreenHandler) {
+		if (InspectorConfig.get().recordContainers && isContainer(client, player, handler)) {
 			int size = containerSize(handler);
 			if (size > 0) {
 				List<ItemStack> contents = new ArrayList<>(size);
@@ -220,6 +220,22 @@ public final class InspectorRecorder {
 		}
 
 		return new InspectorPayloads.Snapshot(owner != null ? owner : player.getUuid(), inventory, container);
+	}
+
+	/**
+	 * Whether what is open is a container, rather than something else wearing a screen handler.
+	 *
+	 * <p>A positive test on purpose. The creative inventory is the reason: it swaps
+	 * {@code currentScreenHandler} for one of its own whose slots are the item list of whichever tab
+	 * is showing, so "any handler that is not the player's" quietly recorded eighteen building
+	 * blocks as the contents of a chest that was never opened.
+	 */
+	private static boolean isContainer(MinecraftClient client, ClientPlayerEntity player,
+			ScreenHandler handler) {
+		return handler != null
+				&& handler != player.playerScreenHandler
+				&& client.currentScreen instanceof HandledScreen<?>
+				&& !(client.currentScreen instanceof CreativeInventoryScreen);
 	}
 
 	/**
