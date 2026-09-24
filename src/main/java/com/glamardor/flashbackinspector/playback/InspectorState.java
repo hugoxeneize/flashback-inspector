@@ -18,7 +18,7 @@ import java.util.UUID;
  * The viewing half: what the recording player was carrying at the tick currently on screen.
  *
  * <p>Rebuilt as the replay plays, from the same packets the recorder wrote. Seeking is handled for
- * free — Flashback replays from the nearest snapshot, and the snapshot carries a full state.
+ * free – Flashback replays from the nearest snapshot, and the snapshot carries a full state.
  */
 public final class InspectorState {
 	private static final InspectorState INSTANCE = new InspectorState();
@@ -162,7 +162,7 @@ public final class InspectorState {
 	/**
 	 * Adds an opening to the log.
 	 *
-	 * <p>Keyed by tick, so watching the same stretch twice — which happens on every seek — leaves
+	 * <p>Keyed by tick, so watching the same stretch twice – which happens on every seek – leaves
 	 * one entry rather than one per pass.
 	 */
 	private void record(InspectorPayloads.ContainerView view) {

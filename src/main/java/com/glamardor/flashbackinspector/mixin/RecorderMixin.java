@@ -16,7 +16,7 @@ import java.util.function.Consumer;
  *
  * <p>{@code writeCustomSnapshot} is an empty method Flashback keeps for this, with a comment in the
  * source inviting mods to mixin here. Without it the inspector would only know about state it had
- * watched go past, and seeking — which is most of how a replay is used — would show an empty bag.
+ * watched go past, and seeking – which is most of how a replay is used – would show an empty bag.
  */
 @Mixin(value = Recorder.class, remap = false)
 public class RecorderMixin {

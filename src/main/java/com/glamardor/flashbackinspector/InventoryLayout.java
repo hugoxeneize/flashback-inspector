@@ -6,7 +6,7 @@ import net.minecraft.entity.EquipmentSlot;
  * The fixed order the inventory is written in.
  *
  * <p>Deliberately not {@code PlayerInventory}'s own indices. Those have been rearranged more than
- * once — 1.21.5 moved the worn items out of the inventory and into the entity's equipment — and a
+ * once – 1.21.5 moved the worn items out of the inventory and into the entity's equipment – and a
  * replay is a file that outlives the version it was recorded on. This layout is ours, it is written
  * into the file, and it is read back the same way for as long as the mod exists.
  */

@@ -1,6 +1,6 @@
 """Builds the mod icon: Flashback's camera with a chest sitting in the corner.
 
-The camera comes out of an installed Flashback jar rather than being committed here — it is
+The camera comes out of an installed Flashback jar rather than being committed here – it is
 Moulberry's artwork and its licence says not to redistribute it.
 
     python icon/make_icon.py "C:/.../Flashback-0.39.1-for-MC1.21.8.jar"
@@ -65,7 +65,7 @@ def main() -> None:
     if len(sys.argv) > 1:
         extract_camera(Path(sys.argv[1]))
     if not CAMERA.exists():
-        raise SystemExit("нет %s — запусти с путём к установленному jar Flashback" % CAMERA)
+        raise SystemExit("нет %s – запусти с путём к установленному jar Flashback" % CAMERA)
 
     camera = Image.open(CAMERA).convert("RGBA")
     size = camera.size[0]

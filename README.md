@@ -1,94 +1,96 @@
 # Flashback Inspector
 
-Кладёт в реплей Flashback то, чего там никогда не было: твой инвентарь и содержимое контейнеров,
-которые ты открывал. При просмотре клавиша инвентаря открывает их как обычный экран — с настоящими
-тултипами, зачарованиями, лором и статами, потому что в файле лежат настоящие предметы.
+Puts into a Flashback replay what was never there: your inventory and the contents of every container
+you opened. During playback the inventory key opens them as a normal screen, with real tooltips,
+enchantments, lore and stats, because the file holds the actual items.
 
-Minecraft 1.21.6–1.21.8, Fabric. Требует [Flashback](https://modrinth.com/mod/flashback) 0.39.0+.
+Minecraft 1.21.6–1.21.8, Fabric. Requires [Flashback](https://modrinth.com/mod/flashback) 0.39.0+.
 
-## Зачем
+## Why
 
-Flashback пишет поток пакетов, а контейнерные пакеты у него в чёрном списке (`IgnoredPacketSet`):
-`ContainerSetContent`, `ContainerSetSlot`, `OpenScreen`, `SetPlayerInventory` и остальные. Из инвентаря
-в записи остаются только девять слотов хотбара — и то если включена опция `recording.recordHotbar` —
-плюс надетое, которое приезжает обычным `SetEquipment` на всех игроков сразу.
+Flashback records a stream of packets, and container packets are on its ignore list (`IgnoredPacketSet`):
+`ContainerSetContent`, `ContainerSetSlot`, `OpenScreen`, `SetPlayerInventory` and the rest. All that is
+left of the inventory in a recording is the nine hotbar slots (and only with `recording.recordHotbar`
+enabled), plus worn equipment, which arrives as a regular `SetEquipment` for every player.
 
-Этот мод дописывает недостающее своими пакетами в тот же поток.
+This mod writes the missing parts into the same stream as its own packets.
 
-## Как устроено
+## How it works
 
-**Запись.** Каждый тик сверяем инвентарь и открытый контейнер с тем, что записали в прошлый раз, и
-отдаём изменившиеся слоты в `Recorder.writePacketAsync` как обычный clientbound custom payload. Полное
-состояние дополнительно уходит в каждый снапшот Flashback через `Recorder.writeCustomSnapshot` — метод,
-который Moulberry оставил пустым с комментарием «Mods can mixin here». Без этого перемотка показывала бы
-пустой инвентарь: при seek Flashback восстанавливает мир из ближайшего снапшота.
+**Recording.** Every tick the inventory and the open container are compared with what was written last
+time, and the changed slots go to `Recorder.writePacketAsync` as an ordinary clientbound custom payload.
+The full state also goes into every Flashback snapshot through `Recorder.writeCustomSnapshot`, a method
+Moulberry left empty with the comment "Mods can mixin here". Without it, seeking would show an empty
+inventory: on seek Flashback rebuilds the world from the nearest snapshot.
 
-**Просмотр.** `ReplayServer` пересылает custom payload зрителю байт-в-байт, клиент декодирует его
-обычным путём, и мы собираем состояние на текущий тик. Экран открывается перехватом
-`MinecraftClient.setScreen` — в реплее клавиша инвентаря ведёт к пустому инвентарю зрителя, и мы
-подменяем его своим. Ловим именно экран, а не нажатие: так работают все пути, включая макросы.
+**Playback.** `ReplayServer` forwards the custom payload to the viewer byte for byte, the client decodes
+it the usual way, and the mod assembles the state for the current tick. The screen is opened by hooking
+`MinecraftClient.setScreen`: in a replay the inventory key leads to the viewer's own empty inventory, and
+the mod swaps it for its own. It catches the screen rather than the key press, so every path works,
+macros included.
 
-**Совместимость.** Реплей, записанный с модом, открывается без него без единой ошибки. Каждое действие
-в файле Flashback лежит отдельным блоком со своей длиной, поэтому неизвестный payload читается как
-непрозрачные байты и выбрасывается, не задевая следующий пакет.
+**Compatibility.** A replay recorded with the mod opens without it, without a single error. Every action
+in a Flashback file is a separate block with its own length, so an unknown payload is read as opaque
+bytes and dropped without touching the next packet.
 
-## Что попадает в запись, а что нет
+## What gets recorded
 
-| | Записывается |
+| | Recorded |
 |---|---|
-| Свой инвентарь, броня, обе руки | да, целиком, со всеми компонентами |
-| Контейнеры, которые открыл сам | да, всё содержимое и каждое изменение слота |
-| Броня и руки других игроков | да — это уже пишет сам Flashback, работает и на старых реплеях |
-| Инвентарь других игроков | нет, и не может: сервер не шлёт его клиенту |
-| Контейнеры, открытые другими | нет, по той же причине |
+| Your own inventory, armor, both hands | yes, in full, with all components |
+| Containers you opened yourself | yes, all contents and every slot change |
+| Other players' armor and hands | yes, Flashback already records this, works on old replays too |
+| Other players' inventories | no, and it can't: the server never sends them to the client |
+| Containers opened by others | no, for the same reason |
 
-Содержимое контейнера известно с тика, на котором он открылся. До этого момента показывать нечего.
+A container's contents are known from the tick it was opened. Before that there is nothing to show.
 
-## Какие контейнеры
+## Which containers
 
-Контейнером считается любой `HandledScreen`, кроме креативного меню и собственного инвентаря игрока.
-По иерархии клиента 1.21.8 это:
+A container is any `HandledScreen` except the creative menu and the player's own inventory. In the
+1.21.8 client hierarchy that means:
 
-- **Хранилища** — сундук, ловушка, эндер-сундук, бочка, шалкер, вагонетка с сундуком, лодка с сундуком,
-  а также инвентарь лошади, осла и ламы. Сюда же попадают почти все GUI серверных плагинов: они строятся
-  на том же `GenericContainerScreenHandler`.
-- **Механизмы** — раздатчик, выбрасыватель, воронка, вагонетка-воронка, печь, доменная печь, коптильня,
-  варочная стойка, автокрафтер.
-- **Верстаки** — верстак, наковальня, кузнечный стол, точило, камнерез, ткацкий станок, картографический
-  стол, зачаровальный стол.
-- **Прочее** — маяк, окно торговли с жителем (только три слота обмена, список предложений в протоколе
-  лежит отдельно и пока не пишется).
+- **Storage**: chest, trapped chest, ender chest, barrel, shulker box, minecart with chest, boat with
+  chest, and horse, donkey and llama inventories. Almost every server plugin GUI lands here as well,
+  since they are built on the same `GenericContainerScreenHandler`.
+- **Machines**: dispenser, dropper, hopper, minecart with hopper, furnace, blast furnace, smoker,
+  brewing stand, crafter.
+- **Workstations**: crafting table, anvil, smithing table, grindstone, stonecutter, loom, cartography
+  table, enchanting table.
+- **Other**: beacon, villager trading (only the three trade slots; the offer list travels separately in
+  the protocol and is not recorded yet).
 
-Не контейнеры и не пишутся: кафедра, таблички, книга в руках, командный блок, структурный блок — у них
-нет слотов, это обычные экраны.
+Not containers and not recorded: lectern, signs, a held book, command block, structure block. They have
+no slots, they are ordinary screens.
 
-Размер контейнера считается как `слоты − 36`: тридцать шесть собственных слотов игрока в ванильном
-`ScreenHandler` всегда добавляются последними. Если слотов меньше тридцати шести, контейнер не пишется
-вовсе — лучше ничего, чем инвентарь игрока во второй раз под чужим именем.
+Container size is computed as `slots − 36`: the player's own thirty-six slots are always added last in
+a vanilla `ScreenHandler`. If there are fewer than thirty-six slots, the container is not recorded at
+all. Better nothing than the player's inventory a second time under someone else's name.
 
-## Управление
+## Controls
 
 | | |
 |---|---|
-| Клавиша инвентаря (`E`) | инспектор того, за кем следишь; справа контейнер, если он был открыт |
-| `K` | журнал открытий контейнеров, клик перематывает реплей на этот тик |
+| Inventory key (`E`) | inspector for the player you are following; the container on the right, if one was open |
+| `K` | container log, clicking an entry seeks the replay to that tick |
 
-Журнал заполняется по мере просмотра: записи появляются тогда, когда пакеты проходят мимо. Один прогон
-или прокрутка по таймлайну — и он полный.
+The log fills in as you watch: entries appear when their packets go by. One pass or a scrub along the
+timeline and it is complete.
 
-Режим контейнеров переключается в настройках: **вручную** (по умолчанию) или **следить за записью**,
-когда контейнер открывается и закрывается сам на тех же тиках. Второй режим удобен для пересмотра сцены
-и мешает при работе с камерой: пока открыт любой игровой экран, редактор Flashback не принимает мышь.
+The container mode is set in the config: **manual** (default) or **follow the recording**, where the
+container opens and closes by itself on the same ticks. The second mode is handy for rewatching a scene
+and gets in the way when working with the camera: while any game screen is open, the Flashback editor
+does not take mouse input.
 
-## Сборка
+## Building
 
 ```
 ./gradlew build
 ```
 
-`libs/flashback-*-api.jar` — обрезанная копия Flashback (только классы, без ffmpeg и нативов), нужна
-исключительно для компиляции. В сборку она не попадает и распространению не подлежит.
+`libs/flashback-*-api.jar` is a stripped copy of Flashback (classes only, no ffmpeg or natives), needed
+for compilation only. It is not included in the build and is not for redistribution.
 
-## Лицензия
+## License
 
 LGPL-3.0-or-later.

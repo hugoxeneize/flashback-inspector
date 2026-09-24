@@ -108,7 +108,7 @@ public class FlashbackInspector implements ClientModInitializer {
 	 * Opens and closes the inspector on the same ticks the container opened and closed.
 	 *
 	 * <p>Done here rather than when the packet arrives, because Flashback puts back whatever screen
-	 * was up before a custom payload was handled — a screen opened inside the receiver would be
+	 * was up before a custom payload was handled – a screen opened inside the receiver would be
 	 * closed again before it was ever drawn.
 	 */
 	private static void followContainer(MinecraftClient client) {

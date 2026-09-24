@@ -5,14 +5,14 @@
 	"flashbackinspector.source.equipment_only": "equipment only",
 	"flashbackinspector.source.legacy": "hotbar and equipment",
 	"flashbackinspector.not_sent": "A server never sends another player's inventory to the client",
-	"flashbackinspector.not_recorded": "This replay was made without the mod — the rest is not in it",
-	"flashbackinspector.no_target": "Nobody selected — spectate a player first",
+	"flashbackinspector.not_recorded": "This replay was made without the mod – the rest is not in it",
+	"flashbackinspector.no_target": "Nobody selected – spectate a player first",
 	"flashbackinspector.button.log": "Container log",
 
 	"flashbackinspector.log.title": "Containers opened",
 	"flashbackinspector.log.empty": "Nothing yet. The log fills in as the replay is watched.",
 
-	"flashbackinspector.hint.container": "Container open: %s — press %s",
+	"flashbackinspector.hint.container": "Container open: %s – press %s",
 
 	"flashbackinspector.container_mode.manual": "Manual",
 	"flashbackinspector.container_mode.follow": "Follow the recording",

@@ -24,7 +24,7 @@ import java.util.UUID;
  * untouched. Two consequences worth remembering. A replay recorded with this mod opens perfectly
  * well without it: every action in the file is length prefixed on its own, so an unknown payload is
  * read as opaque bytes and thrown away without disturbing the packet after it. And nothing here may
- * ever be sent to a server — these only exist on the way into a file and on the way out of one.
+ * ever be sent to a server – these only exist on the way into a file and on the way out of one.
  */
 public final class InspectorPayloads {
 	public static final String NAMESPACE = "flashbackinspector";
@@ -49,7 +49,7 @@ public final class InspectorPayloads {
 	 * if there was one.
 	 *
 	 * <p>Sent when recording starts and again into every one of Flashback's snapshots. That second
-	 * one is what makes seeking work — jump anywhere in the replay and Flashback rebuilds the world
+	 * one is what makes seeking work – jump anywhere in the replay and Flashback rebuilds the world
 	 * from the nearest snapshot, so the inventory has to be in there too or it would arrive empty.
 	 */
 	public record Snapshot(UUID owner, List<ItemStack> inventory, Optional<ContainerView> container)

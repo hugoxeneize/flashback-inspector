@@ -15,8 +15,8 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
  * Hands the inventory key a screen with something on it.
  *
  * <p>Catching the screen rather than the key press on purpose: in a replay the inventory key opens
- * the spectator's own inventory, which is empty by definition, and every route that opens it — the
- * key, a mod, a macro — ends at this one call.
+ * the spectator's own inventory, which is empty by definition, and every route that opens it – the
+ * key, a mod, a macro – ends at this one call.
  */
 @Mixin(MinecraftClient.class)
 public class MinecraftClientMixin {

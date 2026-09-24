@@ -26,7 +26,7 @@ import java.util.UUID;
  *
  * <p>Two kinds of player end up here. The one who made the recording, whose whole inventory was
  * written into the file, and everybody else, of whom the file holds the worn items and the two
- * hands and nothing more — that is all a client is ever told about another player, so that is all
+ * hands and nothing more – that is all a client is ever told about another player, so that is all
  * a recording of a client can contain.
  */
 public class InspectorScreen extends Screen {
@@ -87,7 +87,7 @@ public class InspectorScreen extends Screen {
 	 *
 	 * <p>Never pauses, whatever the setting says. Pausing here would stop the replay on every
 	 * container in the recording, and worse, it would stop it before the container could ever be
-	 * seen to close — the tick that closes it would never arrive.
+	 * seen to close – the tick that closes it would never arrive.
 	 */
 	public static InspectorScreen followed(@Nullable AbstractClientPlayerEntity target) {
 		return new InspectorScreen(target, false);
@@ -185,7 +185,7 @@ public class InspectorScreen extends Screen {
 	 * The panel itself goes in behind the widgets.
 	 *
 	 * <p>Drawn here rather than in {@code render}, because the log button is a child widget and
-	 * children are drawn by {@code super.render} — a panel painted afterwards would cover it.
+	 * children are drawn by {@code super.render} – a panel painted afterwards would cover it.
 	 */
 	@Override
 	public void renderBackground(DrawContext context, int mouseX, int mouseY, float delta) {
@@ -198,7 +198,7 @@ public class InspectorScreen extends Screen {
 	public void render(DrawContext context, int mouseX, int mouseY, float delta) {
 		InspectorState state = InspectorState.get();
 
-		// A container can open, close or change size while this screen is up — in the follow mode
+		// A container can open, close or change size while this screen is up – in the follow mode
 		// that is the normal case. Re-measure rather than draw a grid into space reserved for
 		// something else.
 		int containerSize = isOwner && state.hasContainer() ? state.containerSize() : 0;
