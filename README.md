@@ -9,7 +9,7 @@ the actual items.
 
 ## Credits
 
-This is a port of **[Flashback Inspector by Glam_Ardor](https://codeberg.org/Glam_Ardor/flashback-inspector)**,
+This is a port of **[Flashback Inspector by Glam_Ardor](https://github.com/GlamArdor/flashback-inspector)**,
 which supports Minecraft 1.21.6 to 1.21.8. The idea, the recording format and the original code are
 theirs. All credit for the mod goes to them; this repository only adapts it to 1.21.11. It is
 licensed under the same terms as the original (LGPL-3.0-or-later, see `LICENSE`).
