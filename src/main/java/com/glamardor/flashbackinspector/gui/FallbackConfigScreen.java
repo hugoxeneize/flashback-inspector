@@ -182,8 +182,10 @@ public class FallbackConfigScreen extends Screen {
 			}
 
 			@Override
-			public void render(DrawContext context, int index, int y, int x, int entryWidth, int entryHeight,
-					int mouseX, int mouseY, boolean hovered, float tickDelta) {
+			public void render(DrawContext context, int mouseX, int mouseY, boolean hovered, float tickDelta) {
+				int x = getContentX();
+				int y = getContentY();
+				int entryWidth = getContentWidth();
 				widget.setX(x);
 				widget.setY(y);
 				widget.setWidth(entryWidth);
@@ -209,8 +211,10 @@ public class FallbackConfigScreen extends Screen {
 			}
 
 			@Override
-			public void render(DrawContext context, int index, int y, int x, int entryWidth, int entryHeight,
-					int mouseX, int mouseY, boolean hovered, float tickDelta) {
+			public void render(DrawContext context, int mouseX, int mouseY, boolean hovered, float tickDelta) {
+				int x = getContentX();
+				int y = getContentY();
+				int entryWidth = getContentWidth();
 				MinecraftClient client = MinecraftClient.getInstance();
 				context.drawCenteredTextWithShadow(client.textRenderer, text,
 						x + entryWidth / 2, y + 8, 0xFFE0C070);

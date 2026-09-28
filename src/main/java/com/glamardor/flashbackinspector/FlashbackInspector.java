@@ -65,9 +65,9 @@ public class FlashbackInspector implements ClientModInitializer {
 
 		HudElementRegistry.addLast(Identifier.of(MOD_ID, "container_hint"), ContainerHint::render);
 
-		logKey = KeyBindingHelper.registerKeyBinding(new KeyBinding(
-				"key.flashbackinspector.log", InputUtil.Type.KEYSYM, GLFW.GLFW_KEY_K,
-				"key.categories.flashbackinspector"));
+logKey = KeyBindingHelper.registerKeyBinding(new KeyBinding(
+        "key.flashbackinspector.log", InputUtil.Type.KEYSYM, GLFW.GLFW_KEY_K,
+        KeyBinding.Category.create(Identifier.of(MOD_ID, "main"))));
 
 		ClientTickEvents.END_CLIENT_TICK.register(FlashbackInspector::tick);
 	}

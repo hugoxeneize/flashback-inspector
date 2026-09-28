@@ -28,6 +28,8 @@ import java.util.UUID;
  */
 public final class InspectorPayloads {
 	public static final String NAMESPACE = "flashbackinspector";
+      /** Pseudo container id for the player's own screen: result slot plus the 2x2 crafting grid. */
+  public static final int PLAYER_SCREEN_ID = 200;
 
 	private InspectorPayloads() {
 	}
