@@ -29,6 +29,9 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Consumer;
 
+import net.minecraft.registry.Registries;
+import net.minecraft.util.Identifier;
+
 /**
  * The recording half. Runs on the client tick while Flashback is writing, notices what changed, and
  * hands the change to Flashback's recorder as a packet.
@@ -157,6 +160,7 @@ public final class InspectorRecorder {
             write(recorder, new InspectorPayloads.ContainerEvent(true,
                     new InspectorPayloads.ContainerView(lastContainerId, lastContainerTitle, contents,
                             Optional.ofNullable(lastContainerPos))));
+            write(recorder, new InspectorPayloads.ContainerType(lastContainerId, typeOf (handler)));
             return;
         }
 
@@ -233,7 +237,18 @@ public final class InspectorRecorder {
         if (player == null || lastInventory == null || !InspectorConfig.get().recordInventory) {
             return;
         }
-        consumer.accept(new CustomPayloadS2CPacket(buildSnapshot(client, player)));
+          InspectorPayloads.Snapshot snapshot = buildSnapshot(client, player);
+          consumer.accept(new CustomPayloadS2CPacket(snapshot));
+          // The type goes right behind it, so seeking into an open container still gets its layout.
+          snapshot.container().ifPresent(view -> {
+              int id = view.containerId();
+              if (id > 0 && id != InspectorPayloads.PLAYER_SCREEN_ID) {
+                  String type = typeOf(player.currentScreenHandler);
+                  if (!type.isEmpty()) {
+                      consumer.accept(new CustomPayloadS2CPacket(new InspectorPayloads.ContainerType(id, type)));
+                  }
+              }
+          });
     }
 
     private InspectorPayloads.Snapshot buildSnapshot(MinecraftClient client, ClientPlayerEntity player) {
@@ -306,6 +321,16 @@ public final class InspectorRecorder {
         }
         return client.currentScreen != null ? client.currentScreen.getTitle() : Text.empty();
     }
+
+          /** The registry id of a handler's type, or an empty string when it has none. */
+      private static String typeOf(ScreenHandler handler) {
+          try {
+              Identifier id = Registries.SCREEN_HANDLER.getId(handler.getType());
+              return id == null ? "" : id.toString();
+          } catch (UnsupportedOperationException e) {
+              return "";
+          }
+      }
 
     private static BlockPos lookedAtBlock(MinecraftClient client) {
         return client.crosshairTarget instanceof BlockHitResult hit ? hit.getBlockPos() : null;

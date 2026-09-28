@@ -30,6 +30,7 @@ public final class InspectorState {
     private Text containerTitle = Text.empty();
     private ItemStack[] containerContents = new ItemStack[0];
     private BlockPos containerPos;
+    private String containerType = "";
 
     /** Every container opening seen so far, keyed by the replay tick it happened on. */
     private final TreeMap<Integer, ContainerOpening> openings = new TreeMap<>();
@@ -54,6 +55,7 @@ public final class InspectorState {
         containerContents = new ItemStack[0];
         containerPos = null;
         openings.clear();
+        containerType = "";
     }
 
     // --- reading ---
@@ -100,6 +102,15 @@ public final class InspectorState {
     public BlockPos containerPos() {
         return containerPos;
     }
+          public String containerType() {
+          return containerType;
+      }
+
+      public void applyContainerType(InspectorPayloads.ContainerType payload) {
+          if (payload.containerId() == containerId) {
+              containerType = payload.type();
+          }
+      }
 
     public List<ContainerOpening> openings() {
         return new ArrayList<>(openings.values());
@@ -159,6 +170,7 @@ public final class InspectorState {
         containerTitle = view.title();
         containerContents = view.contents().toArray(new ItemStack[0]);
         containerPos = view.pos().orElse(null);
+        containerType = "";
     }
 
     private void closeContainer() {
@@ -166,6 +178,7 @@ public final class InspectorState {
         containerTitle = Text.empty();
         containerContents = new ItemStack[0];
         containerPos = null;
+        containerType = "";
     }
 
     /**

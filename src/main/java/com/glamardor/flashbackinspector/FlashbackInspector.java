@@ -62,6 +62,15 @@ public class FlashbackInspector implements ClientModInitializer {
 						InspectorState.get().applyContainerEvent(payload);
 					}
 				}));
+    		PayloadTypeRegistry.playS2C().register(InspectorPayloads.ContainerType.ID,
+				InspectorPayloads.ContainerType.CODEC);
+
+        		ClientPlayNetworking.registerGlobalReceiver(InspectorPayloads.ContainerType.ID, (payload, context) ->
+				context.client().execute(() -> {
+					if (Flashback.isInReplay()) {
+						InspectorState.get().applyContainerType(payload);
+					}
+				}));
 
 		HudElementRegistry.addLast(Identifier.of(MOD_ID, "container_hint"), ContainerHint::render);
 

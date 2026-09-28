@@ -37,16 +37,19 @@ public class InspectorScreen extends Screen {
     private static final Identifier CHEST_TEXTURE =
             Identifier.ofVanilla("textures/gui/container/generic_54.png");
 
-        /** Size of a real container grid; zero for no container or for the player's own screen. */
-    private int chestSize(InspectorState state) {
-        return isOwner && state.hasContainer() && !state.isPlayerScreen() ? state.containerSize() : 0;
-    }
-
     private static final int PANEL_WIDTH = 176;
     private static final int INVENTORY_HEIGHT = 166;
     private static final int LINE = 11;
     private static final int TEXT_DARK = 0xFF404040;
     private static final int MUTED = 0xFFA0A0A0;
+
+    /**
+     * A container with a background and slot positions of its own, chosen by its handler type.
+     * A negative titleX centres the title, the way vanilla does for furnaces and dispensers.
+     */
+    private record Special(Identifier texture, int height, int titleX, int titleY, int[][] slots,
+            int mainY, int hotbarY) {
+    }
 
     @Nullable
     private final AbstractClientPlayerEntity target;
@@ -58,9 +61,12 @@ public class InspectorScreen extends Screen {
     private int left;
     private int top;
     private int panelHeight;
-    /** Rows of the container grid, or zero when it is the plain inventory. */
+    /** Rows of the generic container grid, or zero when it is not one. */
     private int rows;
+    @Nullable
+    private Special special;
     private int laidOutContainerSize = -1;
+    private String laidOutType = "";
 
     @Nullable
     private ItemStack hovered;
@@ -97,13 +103,30 @@ public class InspectorScreen extends Screen {
         return null;
     }
 
+    /** Size of a real container grid; zero for no container or for the player's own screen. */
+    private int chestSize(InspectorState state) {
+        return isOwner && state.hasContainer() && !state.isPlayerScreen() ? state.containerSize() : 0;
+    }
+
+    private boolean inContainer() {
+        return rows > 0 || special != null;
+    }
+
     @Override
     protected void init() {
         InspectorState state = InspectorState.get();
         int containerSize = chestSize(state);
         laidOutContainerSize = containerSize;
-        rows = containerSize > 0 ? Math.min(6, (containerSize + 8) / 9) : 0;
-        panelHeight = rows > 0 ? 114 + rows * 18 : INVENTORY_HEIGHT;
+        laidOutType = state.containerType();
+
+        special = containerSize > 0 ? specialFor(laidOutType, containerSize) : null;
+        if (special != null) {
+            rows = 0;
+            panelHeight = special.height();
+        } else {
+            rows = containerSize > 0 ? Math.min(6, (containerSize + 8) / 9) : 0;
+            panelHeight = rows > 0 ? 114 + rows * 18 : INVENTORY_HEIGHT;
+        }
 
         left = (this.width - PANEL_WIDTH) / 2;
         // Room above for the name line, and below for the log button.
@@ -124,7 +147,10 @@ public class InspectorScreen extends Screen {
     @Override
     public void renderBackground(DrawContext context, int mouseX, int mouseY, float delta) {
         super.renderBackground(context, mouseX, mouseY, delta);
-        if (rows > 0) {
+        if (special != null) {
+            context.drawTexture(RenderPipelines.GUI_TEXTURED, special.texture(), left, top,
+                    0f, 0f, PANEL_WIDTH, special.height(), 256, 256);
+        } else if (rows > 0) {
             context.drawTexture(RenderPipelines.GUI_TEXTURED, CHEST_TEXTURE, left, top,
                     0f, 0f, PANEL_WIDTH, rows * 18 + 17, 256, 256);
             context.drawTexture(RenderPipelines.GUI_TEXTURED, CHEST_TEXTURE, left, top + rows * 18 + 17,
@@ -139,8 +165,10 @@ public class InspectorScreen extends Screen {
     public void render(DrawContext context, int mouseX, int mouseY, float delta) {
         InspectorState state = InspectorState.get();
 
+        // A container can open, close, change size or turn out to have a known type while this
+        // screen is up. Re-measure rather than draw a layout into space reserved for another.
         int containerSize = chestSize(state);
-        if (containerSize != laidOutContainerSize) {
+        if (containerSize != laidOutContainerSize || !state.containerType().equals(laidOutType)) {
             clearAndInit();
             return;
         }
@@ -150,7 +178,9 @@ public class InspectorScreen extends Screen {
 
         drawHeader(context, state);
 
-        if (rows > 0) {
+        if (special != null) {
+            drawSpecialLayout(context, mouseX, mouseY, state);
+        } else if (rows > 0) {
             drawContainerLayout(context, mouseX, mouseY, state, containerSize);
         } else {
             drawInventoryLayout(context, mouseX, mouseY, state);
@@ -179,7 +209,7 @@ public class InspectorScreen extends Screen {
         }
         drawSlot(context, mouseX, mouseY, left + 77, top + 62, equipment(EquipmentSlot.OFFHAND), true);
 
-                if (isOwner && state.isPlayerScreen()) {
+        if (isOwner && state.isPlayerScreen()) {
             // Vanilla positions: the 2x2 grid, then the result slot to its right.
             for (int i = 0; i < 4; i++) {
                 drawSlot(context, mouseX, mouseY, left + 98 + (i % 2) * 18, top + 18 + (i / 2) * 18,
@@ -204,6 +234,25 @@ public class InspectorScreen extends Screen {
         }
 
         drawMainAndHotbar(context, mouseX, mouseY, state, 31 + rows * 18, 89 + rows * 18);
+    }
+
+    /** Machines and workstations: their own texture and slot spots. */
+    private void drawSpecialLayout(DrawContext context, int mouseX, int mouseY, InspectorState state) {
+        Special layout = special;
+        Text title = state.containerTitle();
+        int titleX = layout.titleX() < 0
+                ? (PANEL_WIDTH - this.textRenderer.getWidth(title)) / 2
+                : layout.titleX();
+        context.drawText(this.textRenderer, title, left + titleX, top + layout.titleY(), TEXT_DARK, false);
+        context.drawText(this.textRenderer, Text.translatable("container.inventory"),
+                left + 8, top + layout.mainY() - 12, TEXT_DARK, false);
+
+        for (int i = 0; i < layout.slots().length; i++) {
+            int[] at = layout.slots()[i];
+            drawSlot(context, mouseX, mouseY, left + at[0], top + at[1], state.container(i), true);
+        }
+
+        drawMainAndHotbar(context, mouseX, mouseY, state, layout.mainY(), layout.hotbarY());
     }
 
     private void drawMainAndHotbar(DrawContext context, int mouseX, int mouseY, InspectorState state,
@@ -278,13 +327,86 @@ public class InspectorScreen extends Screen {
                 source = "flashbackinspector.source.equipment_only";
             }
             Text line = Text.translatable(source);
-            BlockPos pos = rows > 0 ? state.containerPos() : null;
+            BlockPos pos = inContainer() ? state.containerPos() : null;
             if (pos != null) {
                 line = Text.empty().append(line)
                         .append(Text.literal("  ·  " + pos.getX() + " " + pos.getY() + " " + pos.getZ()));
             }
             context.drawTextWithShadow(this.textRenderer, line, left, y + LINE, MUTED);
         }
+    }
+
+    // --- per-type layouts ---
+
+    /**
+     * The layout for a handler type, or null for anything without one of its own.
+     *
+     * <p>A layout is only used when its slot count matches what was recorded, so a plugin menu that
+     * reuses a vanilla type with a different shape falls back to the plain grid.
+     */
+    @Nullable
+    private static Special specialFor(String type, int size) {
+        Special layout = switch (type) {
+            case "minecraft:crafting" -> new Special(gui("crafting_table"), 166, 29, 6, craftingSlots(), 84, 142);
+            case "minecraft:furnace" -> new Special(gui("furnace"), 166, -1, 6, furnaceSlots(), 84, 142);
+            case "minecraft:blast_furnace" -> new Special(gui("blast_furnace"), 166, -1, 6, furnaceSlots(), 84, 142);
+            case "minecraft:smoker" -> new Special(gui("smoker"), 166, -1, 6, furnaceSlots(), 84, 142);
+            case "minecraft:hopper" -> new Special(gui("hopper"), 133, 8, 6, hopperSlots(), 51, 109);
+            case "minecraft:generic_3x3" -> new Special(gui("dispenser"), 166, -1, 6, dispenserSlots(), 84, 142);
+            case "minecraft:brewing_stand" -> new Special(gui("brewing_stand"), 166, -1, 6, brewingSlots(), 84, 142);
+            case "minecraft:enchantment" -> new Special(gui("enchanting_table"), 166, 12, 5,
+                    new int[][] {{15, 47}, {35, 47}}, 84, 142);
+            case "minecraft:anvil" -> new Special(gui("anvil"), 166, 60, 6,
+                    new int[][] {{27, 47}, {76, 47}, {134, 47}}, 84, 142);
+            case "minecraft:smithing" -> new Special(gui("smithing"), 166, 44, 15,
+                    new int[][] {{8, 48}, {26, 48}, {44, 48}, {98, 48}}, 84, 142);
+            case "minecraft:grindstone" -> new Special(gui("grindstone"), 166, 8, 6,
+                    new int[][] {{49, 19}, {49, 40}, {129, 34}}, 84, 142);
+            case "minecraft:stonecutter" -> new Special(gui("stonecutter"), 166, 8, 4,
+                    new int[][] {{20, 33}, {143, 33}}, 84, 142);
+            default -> null;
+        };
+        return layout != null && layout.slots().length == size ? layout : null;
+    }
+
+    private static Identifier gui(String name) {
+        return Identifier.ofVanilla("textures/gui/container/" + name + ".png");
+    }
+
+    /** Slot 0 is the result, slots 1 to 9 the 3x3 grid. */
+    private static int[][] craftingSlots() {
+        int[][] slots = new int[10][];
+        slots[0] = new int[] {124, 35};
+        for (int i = 0; i < 9; i++) {
+            slots[i + 1] = new int[] {30 + (i % 3) * 18, 17 + (i / 3) * 18};
+        }
+        return slots;
+    }
+
+    /** Input, fuel, output. */
+    private static int[][] furnaceSlots() {
+        return new int[][] {{56, 17}, {56, 53}, {116, 35}};
+    }
+
+    private static int[][] hopperSlots() {
+        int[][] slots = new int[5][];
+        for (int i = 0; i < 5; i++) {
+            slots[i] = new int[] {44 + i * 18, 20};
+        }
+        return slots;
+    }
+
+    private static int[][] dispenserSlots() {
+        int[][] slots = new int[9][];
+        for (int i = 0; i < 9; i++) {
+            slots[i] = new int[] {62 + (i % 3) * 18, 17 + (i / 3) * 18};
+        }
+        return slots;
+    }
+
+    /** Three bottles (left, bottom, right), then the ingredient, then the blaze powder. */
+    private static int[][] brewingSlots() {
+        return new int[][] {{56, 51}, {79, 58}, {102, 51}, {79, 17}, {17, 17}};
     }
 
     // --- what goes in the slots ---
